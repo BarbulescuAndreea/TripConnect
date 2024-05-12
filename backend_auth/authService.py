@@ -24,9 +24,7 @@ def metrics():
 
 @authService.route('/users/add_user', methods=['POST'])
 def add_user():
-    c_register.inc()
     user_data = request.json
-    print(user_data)
 
     if 'username' not in user_data or 'password' not in user_data:
         return jsonify({'error': 'Missing username or password'}), 400
@@ -37,9 +35,12 @@ def add_user():
                  password=hashed_password,
                  registration_date=datetime.utcnow(),
                  email=user_data['email'])
+    
     db.session.add(user)
     db.session.commit()
 
+    c_register.inc()
+    
     return jsonify({'message': 'User added successfully'}), 201
 
 @authService.route('/users/check_user', methods=['GET'])

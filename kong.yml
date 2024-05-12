@@ -90,3 +90,39 @@ services:
     - DELETE
     paths:
     - /delete_booking
+
+- name: business_service_review
+  url: http://business_service:6002/bookings/reviews/create
+  routes:
+  - name: business_route_create_review
+    methods:
+    - POST
+    paths:
+    - /add_review
+
+- name: business_service_review_get
+  url: http://business_service:6002/bookings/reviews
+  routes:
+  - name: business_route_get_review
+    methods:
+    - GET
+    paths:
+    - /get_review
+
+- name: business_service_review_modify
+  url: http://business_service:6002/bookings/reviews/modify
+  routes:
+  - name: business_route_modify_review
+    methods:
+    - PUT
+    paths:
+    - /modify_review
+
+- name: business_service_review_delete
+  url: http://business_service:6002/bookings/reviews/delete
+  routes:
+  - name: business_route_delete_review
+    methods:
+    - DELETE
+    paths:
+    - /delete_review

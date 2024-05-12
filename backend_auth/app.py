@@ -1,13 +1,9 @@
 import os
-import sys
 
 from authService import authService 
 from dbdef import db
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-
-idp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, idp_dir)
 
 app = Flask(__name__)
 

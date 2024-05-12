@@ -3,7 +3,7 @@ import requests
 import jwt
 from flask import jsonify, request, Blueprint, Response
 from datetime import datetime
-from dbdef import db, Flight, Bookings, Transfers
+from dbdef import db, Flight, Bookings, Transfers, Reviews
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 
 businessService = Blueprint('businessService', __name__)
@@ -328,7 +328,6 @@ def get_bookings():
 
     return jsonify({"bookings": bookings_data}), 200
 
-
 @businessService.route('/bookings/modifyBooking', methods=['PUT'])
 def modify_booking():
     c_booking_update.inc()
@@ -362,3 +361,87 @@ def modify_booking():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+    
+@businessService.route('/bookings/reviews/create', methods=['POST'])
+def create_review():
+    data = request.json
+
+    try:
+        decoded_token = jwt.decode(data.get('token'), SECRET_KEY, algorithms=["HS256"])
+        user_id = decoded_token.get('user_id')
+
+    except jwt.DecodeError:
+        return {"error": "No user with this token"}, 404
+    
+    new_review = Reviews(
+        flight_id=data['flight_id'],
+        user_id=user_id,
+        rating=data['rating'],
+        comment=data['comment']
+    )
+
+    db.session.add(new_review)
+    db.session.commit()
+    return jsonify({'message': 'Review created successfully'}), 201
+
+@businessService.route('/bookings/reviews', methods=['GET'])
+def get_review():
+    data = request.json
+    try:
+        decoded_token = jwt.decode(data.get('token'), SECRET_KEY, algorithms=["HS256"])
+        user_id = decoded_token.get('user_id')
+
+    except jwt.DecodeError:
+        return {"error": "No user with this token"}, 404
+
+    review_id = request.json.get('review_id')
+    review = Reviews.query.get(review_id)
+    if not review:
+        return jsonify({'error': 'Review not found'}), 404
+    review_data = {
+        'review_id': review.review_id,
+        'flight_id': review.flight_id,
+        'user_id': review.user_id,
+        'rating': review.rating,
+        'comment': review.comment
+    }
+    return jsonify(review_data)
+
+@businessService.route('/bookings/reviews/modify', methods=['PUT'])
+def modify_review():
+    data = request.json
+    try:
+        decoded_token = jwt.decode(data.get('token'), SECRET_KEY, algorithms=["HS256"])
+        user_id = decoded_token.get('user_id')
+
+    except jwt.DecodeError:
+        return {"error": "No user with this token"}, 404
+    
+    review_id = request.json.get('review_id')
+    review = Reviews.query.get(review_id)
+    if not review:
+        return jsonify({'error': 'Review not found'}), 404
+    data = request.json
+    review.flight_id = data.get('flight_id', review.flight_id)
+    review.rating = data.get('rating', review.rating)
+    review.comment = data.get('comment', review.comment)
+    db.session.commit()
+    return jsonify({'message': 'Review modified successfully'})
+
+@businessService.route('/bookings/reviews/delete', methods=['DELETE'])
+def delete_review():
+    data = request.json
+    try:
+        decoded_token = jwt.decode(data.get('token'), SECRET_KEY, algorithms=["HS256"])
+        user_id = decoded_token.get('user_id')
+
+    except jwt.DecodeError:
+        return {"error": "No user with this token"}, 404
+    
+    review_id = request.json.get('review_id')
+    review = Reviews.query.get(review_id)
+    if not review:
+        return jsonify({'error': 'Review not found'}), 404
+    db.session.delete(review)
+    db.session.commit()
+    return jsonify({'message': 'Review deleted successfully'})

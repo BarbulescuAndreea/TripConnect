@@ -3,7 +3,7 @@ services:
   auth_service:
     image: andro1762/trip_connect_v1:authentication
     deploy:
-      replicas: 1
+      replicas: 2
     environment:
       DB_USER: apple
       DB_PASSWORD: 0000
@@ -23,7 +23,7 @@ services:
   business_service:
     image: andro1762/trip_connect_v1:business
     deploy:
-      replicas: 1
+      replicas: 2
     environment:
       DB_USER: apple
       DB_PASSWORD: 0000
@@ -41,13 +41,12 @@ services:
       - monitoring_network_business
 
   db:
-    image: postgres:latest
+    image: andro1762/trip_connect_v1:my-db-image
     deploy:
       placement:
         constraints:
           - node.role == manager
     volumes:
-      - ./database/tables-db.sql:/docker-entrypoint-initdb.d/tables-db.sql
       - local_pgdata:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: apple
@@ -75,13 +74,11 @@ services:
       - portainer
 
   kong:
-    image: kong:latest
+    image: andro1762/trip_connect_v1:my-kong-image
     deploy:
       placement:
         constraints:
           - node.role == manager
-    volumes:
-      - ./kong.yml:/usr/local/kong/declarative/kong.yml
     ports:
       - "8000:8000"
       - "8001:8001"
@@ -93,7 +90,7 @@ services:
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_ADMIN_ERROR_LOG: /dev/stderr
-      KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yml
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
     networks:
       - kong_authentication_db
       - kong_business_db
@@ -117,7 +114,7 @@ services:
       - db_pgadmin_network
 
   prometheus:
-    image: prom/prometheus
+    image: andro1762/trip_connect_v1:my-prometheus-image
     ports:
       - "9090:9090"
     deploy:
