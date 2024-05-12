@@ -1,0 +1,43 @@
+global:
+  scrape_interval: 3s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+    - targets: ['prometheus:9090']
+  
+  - job_name: 'docker'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['host.docker.internal:9323']
+
+  - job_name: 'auth_service'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['auth_service:6001']  # Target the auth_service container on port 6001
+
+  - job_name: 'business_service'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['business_service:6002']  # Target the business_service container on port 6002
+  
+  - job_name: 'node resources'
+    static_configs:
+      - targets: ['node_exporter:9100']
+    params:
+      collect[]:
+        - cpu
+        - meminfo
+        - diskstats
+        - netdev
+        - netstat
+  
+  - job_name: 'node storage'
+    static_configs:
+      - targets: ['node_exporter:9100']
+    params:
+      collect[]:
+        - filefd
+        - filesystem
+        - xfs

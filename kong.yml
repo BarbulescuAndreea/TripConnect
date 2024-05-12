@@ -1,0 +1,92 @@
+_format_version: "2.1"
+
+services:
+- name: auth_service_home
+  url: http://auth_service:6001/home
+  routes:
+  - name: auth_route_home
+    methods:
+    - GET
+    paths:
+    - /home
+
+- name: auth_service_add_user
+  url: http://auth_service:6001/users/add_user
+  routes:
+  - name: auth_route_add_user
+    methods:
+    - POST
+    paths:
+    - /add_user
+
+- name: auth_service_login
+  url: http://auth_service:6001/users/login
+  routes:
+  - name: auth_route_login
+    methods:
+    - POST
+    paths:
+    - /login_user
+  
+- name: auth_service_check_user
+  url: http://auth_service:6001/users/check_user
+  routes:
+  - name: auth_route_check_user
+    methods:
+    - GET
+    paths:
+    - /check_user
+
+- name: auth_service_delete_user
+  url: http://auth_service:6001/users/delete
+  routes:
+  - name: auth_route_delete_user
+    methods:
+    - DELETE
+    paths:
+    - /delete_user
+  
+- name: business_service_search
+  url: http://business_service:6002/bookings/searchTransfer
+  routes:
+  - name: business_route_search
+    methods:
+    - GET
+    paths:
+    - /search_transfer
+  
+- name: business_service_book
+  url: http://business_service:6002/bookings/bookTransfer
+  routes:
+  - name: business_route_book_transfer
+    methods:
+    - POST
+    paths:
+    - /book_transfer
+
+- name: business_service_bookings
+  url: http://business_service:6002/bookings
+  routes:
+  - name: business_route_bookings
+    methods:
+    - GET
+    paths:
+    - /get_bookings
+
+- name: business_service_modify_booking
+  url: http://business_service:6002/bookings/modifyBooking
+  routes:
+  - name: business_route_modify_bookings
+    methods:
+    - PUT
+    paths:
+    - /modify_booking
+
+- name: business_service_delete_booking
+  url: http://business_service:6002/bookings/deleteBooking
+  routes:
+  - name: business_route_delete_booking
+    methods:
+    - DELETE
+    paths:
+    - /delete_booking

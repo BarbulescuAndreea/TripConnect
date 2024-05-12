@@ -1,0 +1,47 @@
+version: '3.5'
+services:
+  auth_service:
+    build: ./backend_auth
+    ports:
+      - "6001:6001"
+    networks:
+      - auth_network
+    environment:
+      DB_USER: apple
+      DB_PASSWORD: 0000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: trip_connect
+      SECRET_KEY: henlokey
+
+  business_service:
+    build: ./backend_business
+    ports:
+      - "6002:6002"
+    networks:
+      - business_network
+    environment:
+      DB_USER: apple
+      DB_PASSWORD: 0000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: trip_connect
+      SECRET_KEY: henlokey
+
+  db:
+    image: postgres:latest
+    volumes:
+      - ./database/tables-db.sql:/docker-entrypoint-initdb.d/tables-db.sql
+    networks:
+      - auth_network
+      - business_network
+    environment:
+      POSTGRES_USER: apple
+      POSTGRES_PASSWORD: 0000
+      POSTGRES_DB: trip_connect
+
+networks:
+  auth_network:
+    name: auth_network
+  business_network:
+    name: business_network

@@ -1,0 +1,198 @@
+version: '3.5'
+services:
+  auth_service:
+    image: andro1762/trip_connect_v1:authentication
+    deploy:
+      replicas: 1
+    environment:
+      DB_USER: apple
+      DB_PASSWORD: 0000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: trip_connect
+      SECRET_KEY: 6ada614f05f009735522b5054c75ab5e4f61f348
+    ports:
+      - "6001:6001"
+    volumes:
+      - auth_service_data:/app/data
+    networks:
+      - kong_authentication_db
+      - portainer
+      - monitoring_network_authentication
+
+  business_service:
+    image: andro1762/trip_connect_v1:business
+    deploy:
+      replicas: 1
+    environment:
+      DB_USER: apple
+      DB_PASSWORD: 0000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: trip_connect
+      SECRET_KEY: 6ada614f05f009735522b5054c75ab5e4f61f348
+    ports:
+      - "6002:6002"
+    volumes:
+      - business_service_data:/app/data
+    networks:
+      - kong_business_db
+      - portainer
+      - monitoring_network_business
+
+  db:
+    image: postgres:latest
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    volumes:
+      - ./database/tables-db.sql:/docker-entrypoint-initdb.d/tables-db.sql
+      - local_pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: apple
+      POSTGRES_PASSWORD: 0000
+      POSTGRES_DB: trip_connect
+    networks:
+      - kong_authentication_db
+      - kong_business_db
+      - portainer
+      - db_pgadmin_network
+  
+  portainer:
+    image: portainer/portainer
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    ports:
+      - "9000:9000"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - portainer_data:/data 
+    command: -H unix:///var/run/docker.sock
+    networks:
+      - portainer
+
+  kong:
+    image: kong:latest
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    volumes:
+      - ./kong.yml:/usr/local/kong/declarative/kong.yml
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yml
+    networks:
+      - kong_authentication_db
+      - kong_business_db
+      - portainer
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: apple@example.com
+      PGADMIN_DEFAULT_PASSWORD: 0000
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - portainer
+      - db_pgadmin_network
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - portainer
+      - monitoring_network_authentication
+      - monitoring_network_business
+  
+  node_exporter:
+    image: prom/node-exporter
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == manager
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - 9100:9100
+    networks:
+      - portainer
+      - monitoring_network_authentication
+      - monitoring_network_business
+
+networks:
+  kong_authentication_db:
+    driver: overlay
+
+  kong_business_db:
+    driver: overlay
+
+  portainer:
+    driver: overlay
+
+  db_pgadmin_network:
+    driver: overlay
+
+  monitoring_network_authentication:
+    driver: overlay
+
+  monitoring_network_business:
+    driver: overlay
+
+volumes:
+  local_pgdata:
+  pgadmin-data:
+  auth_service_data:
+  business_service_data:
+  portainer_data:
+
+# docker tag local-image:tagname new-repo:tagname
+# docker push new-repo:tagname
+
+# docker swarm init
+# docker stack deploy -c docker-swarm.yml trip-connect-v1
+# docker stack services trip-connect-v1
+
+# docker build -t trip_connect_v1/authentication:latest .
+# docker tag trip_connect_v1/authentication:latest andro1762/trip_connect_v1:authentication
+# docker push andro1762/trip_connect_v1:authentication
+
+# docker build -t trip_connect_v1/business:latest .
+# docker tag trip_connect_v1/business:latest andro1762/trip_connect_v1:business
+# docker push andro1762/trip_connect_v1:business
